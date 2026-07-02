@@ -3,7 +3,11 @@ from typing import Any, Optional, Union
 
 import torch
 
-from ray.data.collate_fn import is_tensor_batch_type
+from ray.data.collate_fn import (
+    TensorBatchReturnType,
+    TensorBatchType,
+    is_tensor_batch_type,
+)
 from ray.data.util.torch_utils import move_tensors_to_device
 
 
@@ -37,7 +41,9 @@ class PipelinedFinalizeFn:
         self._init_lock = threading.Lock()
 
     @torch.no_grad()
-    def __call__(self, batch: Any) -> Any:
+    def __call__(
+        self, batch: Union[TensorBatchType, Any]
+    ) -> Union[TensorBatchReturnType, Any]:
         if not is_tensor_batch_type(batch):
             return batch
 
@@ -78,7 +84,7 @@ class PipelinedFinalizeFn:
                 self._device = device
 
 
-def _record_stream(batch: Any, stream: "torch.cuda.Stream") -> None:
+def _record_stream(batch: TensorBatchReturnType, stream: "torch.cuda.Stream") -> None:
     """Recursively call ``record_stream(stream)`` on every tensor in ``batch``.
 
     ``move_tensors_to_device`` returns a tensor, a (list/tuple of) tensor(s), or a
